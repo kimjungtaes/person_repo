@@ -1,0 +1,358 @@
+package sec01;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+
+public class DBConnection {
+	private Connection connection = null;
+
+	public void connect() {
+		// 1. 외부에서 데이터베이스를 접속 할 수 있도록
+		String url = "jdbc:mysql://localhost:3306/personDB?serverTimezone=UTC";
+		String user = "root";
+		String password = "123456";
+		String driverName = "com.mysql.cj.jdbc.Driver";
+
+		try {
+			Class.forName(driverName);
+			connection = DriverManager.getConnection(url, user, password);
+		} catch (ClassNotFoundException e) {
+			System.out.println("데이터 베이스 로드오류" + e.getStackTrace());
+		} catch (SQLException e) {
+			System.out.println("데이터 베이스 연결오류" + e.getStackTrace());
+		}
+	}
+
+	public int insert(Person p) {
+		this.connect();
+		PreparedStatement ps = null;
+		int returnValue = -1;
+		String query = "insert into persontbl values(null,?, ?, ?, ?, ?, ? )";
+
+		try {
+			ps = connection.prepareStatement(query);
+
+			ps.setString(1, p.getName());
+			ps.setInt(2, p.getAge());
+			ps.setString(3, p.getGender());
+			ps.setInt(4, p.getHeight());
+			ps.setInt(5, p.getWeight());
+			ps.setString(6, p.getCity());
+			returnValue = ps.executeUpdate();
+		} catch (Exception e) {
+			System.out.println("insert 오류 발생" + e.getMessage());
+		} finally {
+			try {
+				if (ps != null) {
+					ps.close();
+				}
+			} catch (SQLException e) {
+				System.out.println("ps close 오류" + e.getMessage());
+			}
+			try {
+				if (connection != null) {
+					connection.close();
+				}
+			} catch (Exception e) {
+				System.out.println("오류" + e.getMessage());
+			}
+		}
+		return returnValue;
+	}
+
+	public ArrayList<Person> nameSearchSelect(String dataName) {
+		ArrayList<Person> list = new ArrayList<>();
+		this.connect();
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		String query = "select * from persontbl where name like ?";
+		try {
+			ps = connection.prepareStatement(query);
+			ps.setString(1, "%" + dataName + "%");
+			rs = ps.executeQuery();
+			if (rs == null) {
+				return null;
+			}
+			while (rs.next()) {
+				int id = rs.getInt("id");
+				String name = rs.getString("name");
+				int age = rs.getInt("age");
+				String gender = rs.getString("gender");
+				int height = rs.getInt("height");
+				int weight = rs.getInt("weight");
+				String city = rs.getString("city");
+				list.add(new Person(id, name, age, gender, height, weight, city));
+			}
+		} catch (Exception e) {
+			System.out.println("select 오류발생" + e.getMessage());
+		} finally {
+			try {
+				if (ps != null) {
+					ps.close();
+				}
+			} catch (SQLException e) {
+				System.out.println("ps close 오류" + e.getMessage());
+			}
+			try {
+				if (connection != null) {
+					connection.close();
+				}
+
+			} catch (Exception e) {
+				System.out.println("오류" + e.getMessage());
+			}
+		}
+		return list;
+	}
+
+	public ArrayList<Person> select() {
+		ArrayList<Person> list = new ArrayList<>();
+		this.connect();
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		String query = "select * from persontbl";
+
+		try {
+			ps = connection.prepareStatement(query);
+			rs = ps.executeQuery();
+			if (rs == null) {
+				return null;
+			}
+			while (rs.next()) {
+				int id = rs.getInt("id");
+				String name = rs.getString("name");
+				int age = rs.getInt("age");
+				String gender = rs.getString("gender");
+				int height = rs.getInt("height");
+				int weight = rs.getInt("weight");
+				String city = rs.getString("city");
+				list.add(new Person(id, name, age, gender, height, weight, city));
+			}
+		} catch (Exception e) {
+			System.out.println("select 오류 발생" + e.getMessage());
+		} finally {
+			try {
+				if (ps != null) {
+					ps.close();
+				}
+			} catch (SQLException e) {
+				System.out.println("ps close 오류" + e.getMessage());
+			}
+			try {
+				if (connection != null) {
+					connection.close();
+				}
+			} catch (Exception e) {
+				System.out.println("오류가 발생했습니다" + e.getMessage());
+			}
+		}
+		return list;
+	}
+
+	public ArrayList<Person> analyzeSelect() {
+		ArrayList<Person> list = new ArrayList<>();
+		this.connect();
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		String query = "select * from persontbl";
+		try {
+			ps = connection.prepareStatement(query);
+			// 삽입 성공하면 ResultSet를 리턴, 실패하면 null 리턴.
+			rs = ps.executeQuery();
+			if (rs == null) {
+				return null;
+			}
+			while (rs.next()) {
+				int id = rs.getInt("id");
+				String name = rs.getString("name");
+				int age = rs.getInt("age");
+				String gender = rs.getString("gender");
+				int height = rs.getInt("height");
+				int weight = rs.getInt("weight");
+				String city = rs.getString("city");
+				list.add(new Person(id, name, age, gender, height, weight, city));
+			}
+		} catch (Exception e) {
+			System.out.println("select 오류 발생 : " + e.getMessage());
+		} finally {
+			try {
+				if (ps != null) {
+					ps.close();
+				}
+			} catch (SQLException e) {
+				System.out.println("ps close 오류 : " + e.getMessage());
+			}
+			try {
+				if (connection != null) {
+					connection.close();
+				}
+			} catch (Exception e) {
+				System.out.println(" 오류가 발생했습니다.  " + e.getMessage());
+			}
+		}
+		return list;
+	}
+
+	public Person selectId(int dataid) {
+		Person person = null;
+		this.connect();
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		String query = "select * from persontbl where id = ?";
+		try {
+			ps = connection.prepareStatement(query);
+			ps.setInt(1, dataid);
+			rs = ps.executeQuery();
+			if (rs == null) {
+				return null;
+			}
+			if (rs.next()) {
+				int id = rs.getInt("id");
+				String name = rs.getString("name");
+				int age = rs.getInt("age");
+				String gender = rs.getString("gender");
+				int height = rs.getInt("height");
+				int weight = rs.getInt("weight");
+				String city = rs.getString("city");
+				person = new Person(id, name, age, gender, height, weight, city);
+			}
+		} catch (Exception e) {
+			System.out.println("select 오류 발생 : " + e.getMessage());
+		} finally {
+			try {
+				if (ps != null) {
+					ps.close();
+				}
+			} catch (SQLException e) {
+				System.out.println("ps close 오류 : " + e.getMessage());
+			}
+			try {
+				if (connection != null) {
+					connection.close();
+				}
+			} catch (Exception e) {
+				System.out.println(" 오류가 발생했습니다  " + e.getMessage());
+			}
+		}
+		return person;
+	}
+
+	public int update(Person p) {
+		this.connect();
+		PreparedStatement ps = null;
+		int returnValue = -1;
+		String query = "update persontbl set weight = ?, height = ? whereid = ?";
+		try {
+			ps = connection.prepareStatement(query);
+			ps.setInt(1, p.getId());
+			ps.setInt(2, p.getHeight());
+			ps.setInt(3, p.getWeight());
+//			ps.setInt(4, s.getMath());
+//			ps.setInt(5, s.getTotal());
+//			ps.setDouble(6, s.getAvg());
+//			ps.setString(7, s.getGrade());
+			// 삽입 성공하면 1을 리턴해준다.
+			returnValue = ps.executeUpdate();
+		} catch (Exception e) {
+			System.out.println("update 오류 발생 : " + e.getMessage());
+		} finally {
+			try {
+				if (ps != null) {
+					ps.close();
+				}
+			} catch (SQLException e) {
+				System.out.println("ps close 오류 : " + e.getMessage());
+			}
+			try {
+				if (connection != null) {
+					connection.close();
+				}
+			} catch (Exception e) {
+				System.out.println(" 오류가 발생했습니다.  " + e.getMessage());
+			}
+		}
+		return returnValue;
+		}
+
+	public ArrayList<Person> selectSort() {
+		ArrayList<Person> list = new ArrayList<>();
+		this.connect();
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		String query = "select * from persontbl order by name asc";
+		try {
+			ps = connection.prepareStatement(query);
+			// 삽입 성공하면 ResultSet를 리턴, 실패하면 null 리턴.
+			rs = ps.executeQuery();
+			if (rs == null) {
+				return null;
+			}
+			while (rs.next()) {
+				int id = rs.getInt("id");
+				String name = rs.getString("name");
+				int age = rs.getInt("age");
+				String gender = rs.getString("gender");
+				int height = rs.getInt("height");
+				int weight = rs.getInt("weight");
+				String city = rs.getString("city");
+				list.add(new Person(id, name, age, gender, weight, height, city));
+			}
+		} catch (Exception e) {
+			System.out.println("select 오류 발생 : " + e.getMessage());
+		} finally {
+			try {
+				if (ps != null) {
+					ps.close();
+				}
+			} catch (SQLException e) {
+				System.out.println("ps close 오류 : " + e.getMessage());
+			}
+			try {
+				if (connection != null) {
+					connection.close();
+				}
+			} catch (Exception e) {
+				System.out.println(" 오류가 발생했습니다.  " + e.getMessage());
+			}
+		}
+		return list;
+
+	}
+
+	public int delete(int deleteid) {
+		this.connect();
+		PreparedStatement ps = null;
+		int returnValue = -1;
+		String query = "delete  from persontbl where id = ?";
+		try {
+			ps = connection.prepareStatement(query);
+			ps.setInt(1, deleteid);
+
+			returnValue = ps.executeUpdate();
+		} catch (Exception e) {
+			System.out.println("insert 오류 발생 : " + e.getMessage());
+		} finally {
+			try {
+				if (ps != null) {
+					ps.close();
+				}
+			} catch (SQLException e) {
+				System.out.println("ps close 오류 : " + e.getMessage());
+			}
+			try {
+				if (connection != null) {
+					connection.close();
+				}
+			} catch (Exception e) {
+				System.out.println(" 오류가 발생했습니다.  " + e.getMessage());
+			}
+		}
+		return returnValue;
+
+	}
+
+}
